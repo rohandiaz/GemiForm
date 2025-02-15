@@ -1,4 +1,4 @@
-import { getFormStats } from '@/actions/formStats'
+import { getFormStats } from '@/actions/formStats';
 import Analytics from '@/components/Analytics';
 import React from 'react'
 

@@ -15,7 +15,7 @@ const suggestionBtnText: SuggestionText[] = [
   },
   {
     label: "Registration Form",
-    text: "Create a course registration form suitable form any scheool or instituition.",
+    text: "Create a course registration form suitable form any school or instituition.",
   },
   {
     label: "Feedback Form",
