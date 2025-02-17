@@ -8,8 +8,6 @@ import { revalidatePath } from "next/cache";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-
-
 export const generateForm = async (prevState: unknown, formData: FormData) => {
     try {
         const user = await currentUser();
@@ -17,7 +15,7 @@ export const generateForm = async (prevState: unknown, formData: FormData) => {
             return { success: false, message: "User not found" };
         }
 
-        // Validate input using zod
+        // Validate input using Zod
         const schema = z.object({
             description: z.string().min(1, "Description is required"),
         });
@@ -66,10 +64,20 @@ Return only the JSON object, without any additional explanations.
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         const response = await model.generateContent(`${description} ${prompt}`);
 
-        const formContent = response.response.text();
+        // Fix incorrect API response handling
+        const textResponse = response.response.text();
 
-        if (!formContent) {
-            return { success: false, message: "Failed to generate form content" };
+        // Extract JSON safely
+        const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            return { success: false, message: "Invalid response format from AI" };
+        }
+
+        let formContent;
+        try {
+            formContent = JSON.parse(jsonMatch[0]); // Extract only the JSON
+        } catch (err) {
+            return { success: false, message: "Failed to parse generated form content" };
         }
 
         console.log("Generated form ->", formContent);
@@ -78,7 +86,7 @@ Return only the JSON object, without any additional explanations.
         const form = await prisma.form.create({
             data: {
                 ownerId: user.id,
-                content: formContent,
+                content: JSON.stringify(formContent), // Ensure stored as a valid JSON string
             },
         });
 
@@ -90,7 +98,7 @@ Return only the JSON object, without any additional explanations.
             data: form,
         };
     } catch (error) {
-        console.log("Error generating form", error);
+        console.error("Error generating form", error);
         return {
             success: false,
             message: "An error occurred while generating the form.",
